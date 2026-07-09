@@ -16,12 +16,12 @@ export class LoginUseCase {
   async execute(dto: LoginDto): Promise<{ accessToken: string; user: User }> {
     const user = await this.userRepository.findByEmail(dto.email.toLowerCase());
     if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password.');
     }
 
     const isPasswordValid = await this.hashService.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password.');
     }
 
     const payload = {

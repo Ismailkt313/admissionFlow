@@ -48,6 +48,6 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
       useClass: JwtTokenService,
     },
   ],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule, IUserRepository],
 })
 export class AuthModule {}

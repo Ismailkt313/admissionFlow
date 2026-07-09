@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
@@ -11,8 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import { isValidName, isValidPassword, sanitizeString } from "@/lib/validation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,45 +42,77 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const savedUserJson = localStorage.getItem("user");
+    if (token && savedUserJson) {
+      router.replace("/dashboard");
+      return;
+    }
+    setCheckingSession(false);
+  }, [router]);
 
   const validateField = (name: string, value: string) => {
     switch (name) {
-      case "name":
-        if (!value.trim()) {
-          return "Full name is required";
+      case "name": {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return "Name is required.";
         }
-        if (value.trim().length < 2) {
-          return "Name must be at least 2 characters";
+        if (trimmed.length < 3) {
+          return "Name must be at least 3 characters long.";
         }
-        if (value.trim().length > 50) {
-          return "Name cannot exceed 50 characters";
+        if (trimmed.length > 50) {
+          return "Name cannot exceed 50 characters.";
         }
-        return "";
-      case "email":
-        if (!value.trim()) {
-          return "Email address is required";
-        }
-        if (!EMAIL_REGEX.test(value)) {
-          return "Please enter a valid email address";
+        if (!/^[a-zA-Z]+( [a-zA-Z]+)*$/.test(trimmed)) {
+          return "Name must contain only letters and single spaces, with no leading/trailing or consecutive spaces.";
         }
         return "";
-      case "password":
+      }
+      case "email": {
+        const trimmedEmail = value.trim();
+        if (!trimmedEmail) {
+          return "Email is required.";
+        }
+        if (trimmedEmail.length > 100) {
+          return "Email cannot exceed 100 characters.";
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+          return "Please provide a valid email address.";
+        }
+        return "";
+      }
+      case "password": {
         if (!value) {
-          return "Password is required";
+          return "Password is required.";
         }
         if (value.length < 8) {
-          return "Password must be at least 8 characters";
+          return "Password must be at least 8 characters long.";
         }
-        if (!PASSWORD_REGEX.test(value)) {
-          return "Must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character";
+        if (value.length > 64) {
+          return "Password cannot exceed 64 characters.";
+        }
+        if (/\s/.test(value)) {
+          return "Password must not contain any spaces.";
+        }
+        const hasUpper = /[A-Z]/.test(value);
+        const hasLower = /[a-z]/.test(value);
+        const hasNumber = /[0-9]/.test(value);
+        const hasSpecial = /[^A-Za-z0-9]/.test(value);
+        if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+          return "Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.";
         }
         return "";
+      }
       case "confirmPassword":
         if (!value) {
-          return "Please confirm your password";
+          return "Please confirm your password.";
         }
         if (value !== form.password) {
-          return "Passwords do not match";
+          return "Passwords do not match.";
         }
         return "";
       default:
@@ -111,9 +142,9 @@ export default function RegisterPage() {
   };
 
   const isFormValid =
-    form.name.trim().length >= 2 &&
-    EMAIL_REGEX.test(form.email) &&
-    PASSWORD_REGEX.test(form.password) &&
+    isValidName(form.name) &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
+    isValidPassword(form.password) &&
     form.password === form.confirmPassword &&
     Object.values(errors).every((err) => !err);
 
@@ -139,7 +170,9 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await api.register(form.name.trim(), form.email.trim(), form.password);
+      const sanitizedName = sanitizeString(form.name);
+      const sanitizedEmail = form.email.toLowerCase().trim();
+      await api.register(sanitizedName, sanitizedEmail, form.password);
 
       toast({
         title: "Account Created Successfully",
@@ -161,6 +194,12 @@ export default function RegisterPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans" />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans">
@@ -241,7 +280,7 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   name="name"
@@ -251,19 +290,21 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("name")}
                   error={touched.name && !!errors.name}
+                  aria-invalid={touched.name && !!errors.name ? "true" : "false"}
+                  aria-describedby={touched.name && errors.name ? "name-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<User className="h-4 w-4" />}
                   required
                 />
                 {touched.name && errors.name && (
-                  <p className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
+                  <p id="name-error" role="alert" className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
                     {errors.name}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   name="email"
@@ -273,19 +314,21 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("email")}
                   error={touched.email && !!errors.email}
+                  aria-invalid={touched.email && !!errors.email ? "true" : "false"}
+                  aria-describedby={touched.email && errors.email ? "email-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<Mail className="h-4 w-4" />}
                   required
                 />
                 {touched.email && errors.email && (
-                  <p className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
+                  <p id="email-error" role="alert" className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
                     {errors.email}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
                 <Input
                   id="password"
                   name="password"
@@ -295,14 +338,16 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("password")}
                   error={touched.password && !!errors.password}
+                  aria-invalid={touched.password && !!errors.password ? "true" : "false"}
+                  aria-describedby={touched.password && errors.password ? "password-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<Lock className="h-4 w-4" />}
                   endIcon={
                     <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="hover:text-foreground text-muted-foreground transition-colors p-0.5 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                       type="button"
+                       tabIndex={-1}
+                       onClick={() => setShowPassword(!showPassword)}
+                       className="hover:text-foreground text-muted-foreground transition-colors p-0.5 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -310,14 +355,14 @@ export default function RegisterPage() {
                   required
                 />
                 {touched.password && errors.password && (
-                  <p className="text-xs font-medium text-error leading-normal mt-1 animate-in fade-in duration-150">
+                  <p id="password-error" role="alert" className="text-xs font-medium text-error leading-normal mt-1 animate-in fade-in duration-150">
                     {errors.password}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -327,6 +372,8 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("confirmPassword")}
                   error={touched.confirmPassword && !!errors.confirmPassword}
+                  aria-invalid={touched.confirmPassword && !!errors.confirmPassword ? "true" : "false"}
+                  aria-describedby={touched.confirmPassword && errors.confirmPassword ? "confirmPassword-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<Lock className="h-4 w-4" />}
                   endIcon={
@@ -342,7 +389,7 @@ export default function RegisterPage() {
                   required
                 />
                 {touched.confirmPassword && errors.confirmPassword && (
-                  <p className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
+                  <p id="confirmPassword-error" role="alert" className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
                     {errors.confirmPassword}
                   </p>
                 )}

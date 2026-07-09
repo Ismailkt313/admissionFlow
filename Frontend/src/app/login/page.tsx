@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { sanitizeString } from "@/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,27 +37,38 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const savedUserJson = localStorage.getItem("user");
+    if (token && savedUserJson) {
+      router.replace("/dashboard");
+      return;
+    }
+
     const savedEmail = localStorage.getItem("remembered_email");
     if (savedEmail) {
       setForm((prev) => ({ ...prev, email: savedEmail, rememberMe: true }));
     }
-  }, []);
+    setCheckingSession(false);
+  }, [router]);
 
   const validateField = (name: string, value: string) => {
     switch (name) {
-      case "email":
-        if (!value.trim()) {
-          return "Email address is required";
+      case "email": {
+        const trimmedEmail = value.trim();
+        if (!trimmedEmail) {
+          return "Email is required.";
         }
-        if (!EMAIL_REGEX.test(value)) {
-          return "Please enter a valid email address";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+          return "Please provide a valid email address.";
         }
         return "";
+      }
       case "password":
         if (!value) {
-          return "Password is required";
+          return "Password is required.";
         }
         return "";
       default:
@@ -86,7 +97,7 @@ export default function LoginPage() {
   };
 
   const isFormValid =
-    EMAIL_REGEX.test(form.email) &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
     form.password.length > 0 &&
     Object.values(errors).every((err) => !err);
 
@@ -110,10 +121,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const data = await api.login(form.email.trim(), form.password);
+      const sanitizedEmail = form.email.toLowerCase().trim();
+      const data = await api.login(sanitizedEmail, form.password);
 
       if (form.rememberMe) {
-        localStorage.setItem("remembered_email", form.email.trim());
+        localStorage.setItem("remembered_email", sanitizedEmail);
       } else {
         localStorage.removeItem("remembered_email");
       }
@@ -141,6 +153,12 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans" />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans">
@@ -220,8 +238,8 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email Address</Label>
+               <div className="space-y-1.5">
+                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   name="email"
@@ -231,12 +249,14 @@ export default function LoginPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("email")}
                   error={touched.email && !!errors.email}
+                  aria-invalid={touched.email && !!errors.email ? "true" : "false"}
+                  aria-describedby={touched.email && errors.email ? "email-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<Mail className="h-4 w-4" />}
                   required
                 />
                 {touched.email && errors.email && (
-                  <p className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
+                  <p id="email-error" role="alert" className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
                     {errors.email}
                   </p>
                 )}
@@ -244,7 +264,7 @@ export default function LoginPage() {
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
                   <span className="text-xs font-medium text-muted-foreground/60 cursor-not-allowed select-none">
                     Forgot Password?
                   </span>
@@ -258,6 +278,8 @@ export default function LoginPage() {
                   onChange={handleChange}
                   onBlur={() => handleBlur("password")}
                   error={touched.password && !!errors.password}
+                  aria-invalid={touched.password && !!errors.password ? "true" : "false"}
+                  aria-describedby={touched.password && errors.password ? "password-error" : undefined}
                   disabled={isSubmitting}
                   startIcon={<Lock className="h-4 w-4" />}
                   endIcon={
@@ -273,7 +295,7 @@ export default function LoginPage() {
                   required
                 />
                 {touched.password && errors.password && (
-                  <p className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
+                  <p id="password-error" role="alert" className="text-xs font-medium text-error leading-none mt-1 animate-in fade-in duration-150">
                     {errors.password}
                   </p>
                 )}

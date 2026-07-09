@@ -20,6 +20,14 @@ export class MongoUserRepository implements IUserRepository {
     return this.toDomain(doc);
   }
 
+  async findById(id: string): Promise<User | null> {
+    const doc = await this.userModel.findById(id).exec();
+    if (!doc) {
+      return null;
+    }
+    return this.toDomain(doc);
+  }
+
   async create(user: User): Promise<User> {
     const created = new this.userModel({
       name: user.name,
