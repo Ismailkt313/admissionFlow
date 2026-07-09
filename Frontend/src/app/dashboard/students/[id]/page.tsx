@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit2, User, Calendar, School, Layers, Clock, CreditCard, Award, BookOpen, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Edit2, User, Calendar, School, Layers, Clock, CreditCard, Award, BookOpen, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
@@ -20,6 +20,7 @@ export default function StudentDetailsPage() {
   const [error, setError] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   const [availableSlots, setAvailableSlots] = useState<ExamSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -308,12 +309,21 @@ export default function StudentDetailsPage() {
       </div>
 
       {/* Locked Banner */}
-      {isPaid && (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 border border-amber-200/60 rounded-lg">
-          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-          <p className="text-[12px] font-medium text-amber-800">
-            Registration fee completed. Student information is locked. Continue to Entrance Exam Slot Booking.
-          </p>
+      {student.paymentStatus === "PAID" && !student.examSlotId && !isBannerDismissed && (
+        <div className="flex items-center justify-between gap-2.5 px-4 py-2.5 bg-amber-50 border border-amber-200/60 rounded-lg animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            <p className="text-[12px] font-medium text-amber-800">
+              Registration fee completed. Student information is locked. Continue to Entrance Exam Slot Booking.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsBannerDismissed(true)}
+            className="p-1 rounded-md text-amber-500 hover:text-amber-700 hover:bg-amber-100/50 transition-colors focus:outline-none focus:ring-1 focus:ring-amber-500"
+            aria-label="Dismiss banner"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 

@@ -6,7 +6,7 @@ import { isValidDOB, sanitizeString } from '../../../common/utils/validation.hel
 
 @Injectable()
 export class CreateStudentUseCase {
-  constructor(private readonly studentRepository: IStudentRepository) {}
+  constructor(private readonly studentRepository: IStudentRepository) {} 
 
   async execute(dto: CreateStudentDto, parentId: string): Promise<Student> {
     if (!isValidDOB(dto.dateOfBirth)) {
