@@ -14,6 +14,7 @@ import {
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../../auth/infrastructure/decorators/roles.decorator';
+import type { RequestWithUser } from '../../../common/interfaces/request.interface';
 import { CreateStudentUseCase } from '../../application/use-cases/create-student.use-case';
 import { GetStudentsUseCase } from '../../application/use-cases/get-students.use-case';
 import { GetStudentDetailsUseCase } from '../../application/use-cases/get-student-details.use-case';
@@ -51,7 +52,7 @@ export class StudentsController {
   @Post()
   @Roles('PARENT')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Request() req: any, @Body() dto: CreateStudentDto) {
+  async create(@Request() req: RequestWithUser, @Body() dto: CreateStudentDto) {
     const parentId = this.getParentId(req);
     return this.createStudentUseCase.execute(dto, parentId);
   }
@@ -59,7 +60,7 @@ export class StudentsController {
   @Get()
   @Roles('PARENT')
   @HttpCode(HttpStatus.OK)
-  async findAll(@Request() req: any) {
+  async findAll(@Request() req: RequestWithUser) {
     const parentId = this.getParentId(req);
     return this.getStudentsUseCase.execute(parentId);
   }
@@ -81,7 +82,7 @@ export class StudentsController {
   @Get(':id')
   @Roles('PARENT', 'ADMISSION_TEAM')
   @HttpCode(HttpStatus.OK)
-  async findOne(@Request() req: any, @Param('id') id: string) {
+  async findOne(@Request() req: RequestWithUser, @Param('id') id: string) {
     if (req.user.role === 'ADMISSION_TEAM') {
       return this.getApplicationDetailsUseCase.execute(id);
     }
@@ -93,7 +94,7 @@ export class StudentsController {
   @Roles('PARENT')
   @HttpCode(HttpStatus.OK)
   async update(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Param('id') id: string,
     @Body() dto: UpdateStudentDto,
   ) {
@@ -105,7 +106,7 @@ export class StudentsController {
   @Roles('PARENT')
   @HttpCode(HttpStatus.OK)
   async payRegistration(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Param('studentId') studentId: string,
   ) {
     const parentId = this.getParentId(req);
@@ -116,7 +117,7 @@ export class StudentsController {
   @Roles('PARENT')
   @HttpCode(HttpStatus.OK)
   async bookSlot(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Param('studentId') studentId: string,
     @Body() dto: BookSlotDto,
   ) {
@@ -144,7 +145,7 @@ export class StudentsController {
     return this.assignCourseUseCase.execute(studentId, dto);
   }
 
-  private getParentId(req: any): string {
+  private getParentId(req: RequestWithUser): string {
     if (!req.user || req.user.role !== 'PARENT') {
       throw new ForbiddenException('Only authenticated Parent users can access these APIs.');
     }

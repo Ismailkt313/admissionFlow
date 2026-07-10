@@ -39,7 +39,7 @@ export class MongoUserRepository implements IUserRepository {
     return this.toDomain(saved);
   }
 
-  private toDomain(doc: any): User {
+  private toDomain(doc: UserDocument): User {
     return new User(
       doc._id.toString(),
       doc.name,

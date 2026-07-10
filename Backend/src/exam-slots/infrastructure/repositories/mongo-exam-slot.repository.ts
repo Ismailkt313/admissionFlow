@@ -88,7 +88,7 @@ export class MongoExamSlotRepository implements IExamSlotRepository {
     return result.modifiedCount > 0;
   }
 
-  private toDomain(doc: any): ExamSlot {
+  private toDomain(doc: ExamSlotDocument): ExamSlot {
     return new ExamSlot(
       doc._id.toString(),
       doc.date,

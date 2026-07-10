@@ -7,7 +7,8 @@ import { ArrowLeft, Edit2, User, Calendar, School, Layers, Clock, CreditCard, Aw
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, Student, ApiError, ExamSlot } from "@/lib/api";
+import { studentApi, examSlotApi, Student, ApiError, ExamSlot } from "@/lib/api";
+import { getToken } from "@/lib/auth-storage";
 
 export default function StudentDetailsPage() {
   const router = useRouter();
@@ -30,11 +31,11 @@ export default function StudentDetailsPage() {
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
 
   const fetchAvailableSlots = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
     setLoadingSlots(true);
     try {
-      const slots = await api.getAvailableSlots(token);
+      const slots = await examSlotApi.getAvailable();
       setAvailableSlots(slots);
     } catch (err) {
       console.error("Failed to fetch slots", err);
@@ -44,10 +45,10 @@ export default function StudentDetailsPage() {
   };
 
   const fetchBookedSlot = async (slotId: string) => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
     try {
-      const slot = await api.getSlotDetails(token, slotId);
+      const slot = await examSlotApi.getDetails(slotId);
       setBookedSlot(slot);
     } catch (err) {
       console.error("Failed to fetch booked slot details", err);
@@ -55,10 +56,10 @@ export default function StudentDetailsPage() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token || !id) return;
 
-    api.getStudentDetails(token, id)
+    studentApi.getDetails(id)
       .then((data) => {
         setStudent(data);
         if (data.paymentStatus === "PAID" && !data.examSlotId) {
@@ -124,12 +125,12 @@ export default function StudentDetailsPage() {
   };
 
   const handleConfirmPayment = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
 
     setIsSubmittingPayment(true);
     try {
-      const updatedStudent = await api.payRegistration(token, id);
+      const updatedStudent = await studentApi.payRegistration(id);
       setStudent(updatedStudent);
       setIsConfirmDialogOpen(false);
       toast({
@@ -156,12 +157,12 @@ export default function StudentDetailsPage() {
 
   const handleBookSlot = async () => {
     if (!selectedSlotId) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
 
     setIsSubmittingBooking(true);
     try {
-      const updatedStudent = await api.bookSlot(token, id, selectedSlotId);
+      const updatedStudent = await studentApi.bookSlot(id, selectedSlotId);
       setStudent(updatedStudent);
       setIsBookingModalOpen(false);
       toast({

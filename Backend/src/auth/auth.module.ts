@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import type { StringValue } from 'ms';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -25,7 +26,7 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<any>('JWT_EXPIRATION') || '3600s',
+          expiresIn: configService.get<StringValue>('JWT_EXPIRATION') || '3600s',
         },
       }),
     }),

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { IExamSlotRepository } from '../../domain/repositories/exam-slot.repository.interface';
 import { IStudentRepository } from '../../../students/domain/repositories/student.repository.interface';
-import { ApplicationStatus, PaymentStatus } from '../../../students/domain/entities/student.entity';
+import { Student, ApplicationStatus, PaymentStatus } from '../../../students/domain/entities/student.entity';
 
 @Injectable()
 export class BookExamSlotUseCase {
@@ -15,7 +15,7 @@ export class BookExamSlotUseCase {
     private readonly studentRepository: IStudentRepository,
   ) {}
 
-  async execute(studentId: string, parentId: string, slotId: string): Promise<any> {
+  async execute(studentId: string, parentId: string, slotId: string): Promise<Student> {
     const student = await this.studentRepository.findById(studentId);
     if (!student) {
       throw new NotFoundException('Student record not found.');
@@ -68,6 +68,10 @@ export class BookExamSlotUseCase {
       examSlotId: slotId,
       status: ApplicationStatus.SLOT_BOOKED,
     });
+
+    if (!updatedStudent) {
+      throw new NotFoundException('Student record not found during update.');
+    }
 
     return updatedStudent;
   }

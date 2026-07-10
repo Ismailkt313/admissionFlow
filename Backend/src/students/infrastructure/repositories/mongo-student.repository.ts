@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { IStudentRepository } from '../../domain/repositories/student.repository.interface';
-import { Student, ApplicationStatus } from '../../domain/entities/student.entity';
+import { Student, ApplicationStatus, Grade } from '../../domain/entities/student.entity';
 import { StudentDocument } from '../schemas/student.schema';
 
 @Injectable()
@@ -68,18 +68,18 @@ export class MongoStudentRepository implements IStudentRepository {
     return docs.map((doc) => this.toDomain(doc));
   }
 
-  private toDomain(doc: any): Student {
+  private toDomain(doc: StudentDocument): Student {
     let applyingGrade = doc.applyingGrade;
     if (typeof applyingGrade === 'string') {
       const normalized = applyingGrade.toUpperCase().replace(/\s+/g, "");
       if (normalized === "GRADE1" || normalized === "1" || normalized === "GRADE_1" || normalized.includes("1")) {
-        applyingGrade = 'GRADE_1';
+        applyingGrade = Grade.GRADE_1;
       } else if (normalized === "GRADE2" || normalized === "2" || normalized === "GRADE_2" || normalized.includes("2")) {
-        applyingGrade = 'GRADE_2';
+        applyingGrade = Grade.GRADE_2;
       } else if (normalized === "GRADE3" || normalized === "3" || normalized === "GRADE_3" || normalized.includes("3")) {
-        applyingGrade = 'GRADE_3';
+        applyingGrade = Grade.GRADE_3;
       } else if (normalized === "GRADE4" || normalized === "4" || normalized === "GRADE_4" || normalized.includes("4")) {
-        applyingGrade = 'GRADE_4';
+        applyingGrade = Grade.GRADE_4;
       }
     }
     return new Student(

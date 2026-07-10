@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, Student, ApiError, AssignedCourse, Grade } from "@/lib/api";
+import { studentApi, Student, ApiError, AssignedCourse, Grade } from "@/lib/api";
+import { getToken, getUser } from "@/lib/auth-storage";
 import { getCourseLabel, GRADE_OPTIONS } from "@/lib/validation";
 
 export default function DashboardPage() {
@@ -27,24 +28,23 @@ export default function DashboardPage() {
   const [modalError, setModalError] = useState("");
 
   const fetchData = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
 
-    const savedUserJson = localStorage.getItem("user");
+    const user = getUser();
     let userRole = "";
-    if (savedUserJson) {
-      const parsed = JSON.parse(savedUserJson);
-      userRole = parsed.role || "";
+    if (user) {
+      userRole = user.role || "";
       setRole(userRole);
     }
 
     setLoading(true);
     try {
       if (userRole === "ADMISSION_TEAM") {
-        const data = await api.getApplications(token);
+        const data = await studentApi.applications();
         setStudents(data);
       } else {
-        const data = await api.getStudents(token);
+        const data = await studentApi.get();
         setStudents(data);
       }
     } catch (err) {
@@ -134,10 +134,10 @@ export default function DashboardPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session");
 
-      await api.updateExamScore(token, selectedStudent.id, scoreNum);
+      await studentApi.updateExamScore(selectedStudent.id, scoreNum);
       toast({
         title: "Score Updated",
         description: `Successfully updated exam score for ${selectedStudent.studentName}.`,
@@ -171,10 +171,10 @@ export default function DashboardPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session");
 
-      await api.assignCourse(token, selectedStudent.id, courseValue as Grade);
+      await studentApi.assignCourse(selectedStudent.id, courseValue as Grade);
       toast({
         title: "Course Assigned",
         description: `Successfully enrolled ${selectedStudent.studentName} in ${getCourseLabel(courseValue)}.`,

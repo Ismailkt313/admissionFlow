@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, ApiError } from "@/lib/api";
+import { authApi, ApiError } from "@/lib/api";
+import { getToken, getUser } from "@/lib/auth-storage";
 
 import { isValidName, isValidPassword, sanitizeString } from "@/lib/validation";
 
@@ -45,8 +46,8 @@ export default function RegisterPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const savedUserJson = localStorage.getItem("user");
+    const token = getToken();
+    const savedUserJson = getUser();
     if (token && savedUserJson) {
       router.replace("/dashboard");
       return;
@@ -172,7 +173,7 @@ export default function RegisterPage() {
     try {
       const sanitizedName = sanitizeString(form.name);
       const sanitizedEmail = form.email.toLowerCase().trim();
-      await api.register(sanitizedName, sanitizedEmail, form.password);
+      await authApi.register(sanitizedName, sanitizedEmail, form.password);
 
       toast({
         title: "Account Created Successfully",

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, ExamSlot, ApiError } from "@/lib/api";
+import { examSlotApi, ExamSlot, ApiError } from "@/lib/api";
+import { getToken } from "@/lib/auth-storage";
 
 export default function ExamSlotsPage() {
   const { toast } = useToast();
@@ -42,11 +43,11 @@ export default function ExamSlotsPage() {
   });
 
   const fetchSlots = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
     setLoading(true);
     try {
-      const data = await api.getAllExamSlots(token);
+      const data = await examSlotApi.get();
       setSlots(data);
     } catch (err) {
       setError("Failed to load entrance exam slots.");
@@ -188,10 +189,10 @@ export default function ExamSlotsPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session found");
 
-      await api.createExamSlot(token, {
+      await examSlotApi.create({
         date: new Date(form.date).toISOString(),
         startTime: form.startTime,
         endTime: form.endTime,

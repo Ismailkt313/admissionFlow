@@ -10,13 +10,13 @@ export class RegisterDto {
     message: 'Name must contain only letters and single spaces, with no leading/trailing spaces or consecutive spaces.',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  name: string;
+  name!: string;
 
   @IsNotEmpty({ message: 'Email is required.' })
   @IsEmail({}, { message: 'Please provide a valid email address.' })
   @MaxLength(100, { message: 'Email cannot exceed 100 characters.' })
   @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
-  email: string;
+  email!: string;
 
   @IsNotEmpty({ message: 'Password is required.' })
   @IsString({ message: 'Password must be a string.' })
@@ -25,5 +25,5 @@ export class RegisterDto {
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9\s])[^\s]{8,64}$/, {
     message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, 1 special character, and must not contain any spaces.',
   })
-  password: string;
+  password!: string;
 }

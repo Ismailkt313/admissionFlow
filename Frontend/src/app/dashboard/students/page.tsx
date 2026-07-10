@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, Student, ApiError, AssignedCourse, Grade } from "@/lib/api";
+import { studentApi, Student, ApiError, AssignedCourse, Grade } from "@/lib/api";
+import { getToken, getUser } from "@/lib/auth-storage";
 import { getCourseLabel, GRADE_OPTIONS } from "@/lib/validation";
 
 export default function StudentListPage() {
@@ -34,24 +35,23 @@ export default function StudentListPage() {
   const [modalError, setModalError] = useState("");
 
   const fetchData = async () => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) return;
 
-    const savedUserJson = localStorage.getItem("user");
+    const user = getUser();
     let userRole = "";
-    if (savedUserJson) {
-      const parsed = JSON.parse(savedUserJson);
-      userRole = parsed.role || "";
+    if (user) {
+      userRole = user.role || "";
       setRole(userRole);
     }
 
     setLoading(true);
     try {
       if (userRole === "ADMISSION_TEAM") {
-        const data = await api.getApplications(token);
+        const data = await studentApi.applications();
         setStudents(data);
       } else {
-        const data = await api.getStudents(token);
+        const data = await studentApi.get();
         setStudents(data);
       }
     } catch (err) {
@@ -119,10 +119,10 @@ export default function StudentListPage() {
     setIsViewOpen(true);
     setModalError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session");
 
-      const data = await api.getStudentDetails(token, studentId);
+      const data = await studentApi.getDetails(studentId);
       setViewStudent(data);
     } catch (err) {
       toast({
@@ -142,6 +142,8 @@ export default function StudentListPage() {
     setModalError("");
     setIsScoreModalOpen(true);
   };
+
+
 
   const handleOpenCourse = (student: Student) => {
     setSelectedStudent(student);
@@ -163,10 +165,10 @@ export default function StudentListPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session");
 
-      await api.updateExamScore(token, selectedStudent.id, scoreNum);
+      await studentApi.updateExamScore(selectedStudent.id, scoreNum);
       toast({
         title: "Score Updated",
         description: `Successfully updated exam score for ${selectedStudent.studentName}.`,
@@ -204,10 +206,10 @@ export default function StudentListPage() {
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No session");
 
-      await api.assignCourse(token, selectedStudent.id, courseValue as Grade);
+      await studentApi.assignCourse(selectedStudent.id, courseValue as Grade);
       toast({
         title: "Course Assigned",
         description: `Successfully enrolled ${selectedStudent.studentName} in ${getCourseLabel(courseValue)}.`,
@@ -333,7 +335,7 @@ export default function StudentListPage() {
                       <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                       <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Fee</th>
                       <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Created</th>
-                      <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                      <th className="px-4 py-2.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>  
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

@@ -37,7 +37,7 @@ export function getStudentAge(dob: Date): number {
   return age;
 }
 
-export function isValidDOB(dobDateInput: any): boolean {
+export function isValidDOB(dobDateInput: Date | string | number): boolean {
   if (!dobDateInput) return false;
   const dobDate = new Date(dobDateInput);
   if (isNaN(dobDate.getTime())) return false;

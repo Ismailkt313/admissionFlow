@@ -4,6 +4,7 @@ import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { JwtAuthGuard } from '../../infrastructure/guards/jwt-auth.guard';
+import type { RequestWithUser } from '../../../common/interfaces/request.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +28,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   @HttpCode(HttpStatus.OK)
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: RequestWithUser) {
     return req.user;
   }
 }

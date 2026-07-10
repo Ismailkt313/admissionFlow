@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, ApiError, Gender, Grade } from "@/lib/api";
+import { studentApi, ApiError, Gender, Grade } from "@/lib/api";
+import { getToken } from "@/lib/auth-storage";
 import { isValidStudentName, isValidDOB, isValidPreviousSchool, sanitizeString, isValidGrade, GRADE_OPTIONS } from "@/lib/validation";
 
 export default function EditStudentPage() {
@@ -47,10 +48,10 @@ export default function EditStudentPage() {
   const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID">("PENDING");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token || !id) return;
 
-    api.getStudentDetails(token, id)
+    studentApi.getDetails(id)
       .then((student) => {
         let dobStr = "";
         if (student.dateOfBirth) {
@@ -201,10 +202,10 @@ export default function EditStudentPage() {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) throw new Error("No authorization token found.");
 
-      await api.updateStudent(token, id, {
+      await studentApi.update(id, {
         studentName: sanitizeString(form.studentName),
         dateOfBirth: new Date(form.dateOfBirth).toISOString(),
         gender: form.gender as Gender,

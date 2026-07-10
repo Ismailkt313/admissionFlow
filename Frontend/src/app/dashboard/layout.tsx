@@ -6,7 +6,8 @@ import Link from "next/link";
 import { LayoutDashboard, Users, LogOut, Menu, X, GraduationCap, ChevronRight, Calendar, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { api, User as UserType } from "@/lib/api";
+import { authApi, User as UserType } from "@/lib/api";
+import { getToken, getUser, setUser as saveUser, clearAuth } from "@/lib/auth-storage";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,32 +19,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const savedUserJson = localStorage.getItem("user");
+    const token = getToken();
+    const savedUser = getUser();
 
-    if (!token || !savedUserJson) {
+    if (!token || !savedUser) {
       router.push("/login");
       return;
     }
 
     try {
-      const parsedUser = JSON.parse(savedUserJson) as UserType;
-      setUser(parsedUser);
+      setUser(savedUser);
 
-      api.getProfile(token)
+      authApi.profile()
         .then((fetchedUser) => {
-          const merged = { ...parsedUser, ...fetchedUser };
+          const merged = { ...savedUser, ...fetchedUser };
           setUser(merged);
-          localStorage.setItem("user", JSON.stringify(merged));
+          saveUser(merged);
         })
         .catch(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
+          clearAuth();
           router.push("/login");
         });
     } catch {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      clearAuth();
       router.push("/login");
     } finally {
       setLoading(false);
@@ -51,8 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuth();
     toast({
       title: "Signed Out Successfully",
       description: "You have been logged out of your session.",

@@ -4,22 +4,25 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true, collection: 'exam_slots' })
 export class ExamSlotDocument extends Document {
   @Prop({ required: true })
-  date: Date;
+  date!: Date;
 
   @Prop({ required: true, trim: true })
-  startTime: string;
+  startTime!: string;
 
   @Prop({ required: true, trim: true })
-  endTime: string;
+  endTime!: string;
 
   @Prop({ required: true, min: 1 })
-  capacity: number;
+  capacity!: number;
 
   @Prop({ required: true, default: 0 })
-  bookedCount: number;
+  bookedCount!: number;
 
   @Prop({ required: true, default: true })
-  isActive: boolean;
+  isActive!: boolean;
+
+  createdAt!: Date;
+  updatedAt!: Date;
 }
 
 export const ExamSlotSchema = SchemaFactory.createForClass(ExamSlotDocument);

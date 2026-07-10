@@ -5,5 +5,5 @@ export class UpdateExamScoreDto {
   @IsInt({ message: 'Exam score must be an integer.' })
   @Min(0, { message: 'Exam score must be between 0 and 100.' })
   @Max(100, { message: 'Exam score must be between 0 and 100.' })
-  examScore: number;
+  examScore!: number;
 }

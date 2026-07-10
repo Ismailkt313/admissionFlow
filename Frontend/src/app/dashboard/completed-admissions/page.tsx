@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api, Student } from "@/lib/api";
+import { studentApi, Student } from "@/lib/api";
+import { getToken } from "@/lib/auth-storage";
 import { getCourseLabel } from "@/lib/validation";
 
 export default function CompletedAdmissionsPage() {
@@ -14,14 +15,14 @@ export default function CompletedAdmissionsPage() {
   const loadData = () => {
     setLoading(true);
     setError(false);
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) {
       setError(true);
       setLoading(false);
       return;
     }
 
-    api.getCompletedAdmissions(token)
+    studentApi.completedAdmissions()
       .then((data) => {
         setAdmissions(data);
         setError(false);

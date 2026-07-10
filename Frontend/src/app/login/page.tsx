@@ -10,7 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/toast";
-import { api, ApiError } from "@/lib/api";
+import { authApi, ApiError } from "@/lib/api";
+import { getToken, getUser, getRememberedEmail, setRememberedEmail, removeRememberedEmail, setToken, setUser } from "@/lib/auth-storage";
 
 import { sanitizeString } from "@/lib/validation";
 
@@ -40,14 +41,14 @@ export default function LoginPage() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const savedUserJson = localStorage.getItem("user");
+    const token = getToken();
+    const savedUserJson = getUser();
     if (token && savedUserJson) {
       router.replace("/dashboard");
       return;
     }
 
-    const savedEmail = localStorage.getItem("remembered_email");
+    const savedEmail = getRememberedEmail();
     if (savedEmail) {
       setForm((prev) => ({ ...prev, email: savedEmail, rememberMe: true }));
     }
@@ -122,16 +123,16 @@ export default function LoginPage() {
 
     try {
       const sanitizedEmail = form.email.toLowerCase().trim();
-      const data = await api.login(sanitizedEmail, form.password);
+      const data = await authApi.login(sanitizedEmail, form.password);
 
       if (form.rememberMe) {
-        localStorage.setItem("remembered_email", sanitizedEmail);
+        setRememberedEmail(sanitizedEmail);
       } else {
-        localStorage.removeItem("remembered_email");
+        removeRememberedEmail();
       }
 
-      localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      setToken(data.accessToken);
+      setUser(data.user);
 
       toast({
         title: "Successfully Authenticated",

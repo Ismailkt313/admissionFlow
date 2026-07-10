@@ -11,16 +11,16 @@ export class CreateStudentDto {
     message: 'Student name must contain only letters and single spaces, with no consecutive or leading/trailing spaces.',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  studentName: string;
+  studentName!: string;
 
   @IsNotEmpty({ message: 'Date of birth is required.' })
   @Type(() => Date)
   @IsDate({ message: 'Please provide a valid date of birth.' })
-  dateOfBirth: Date;
+  dateOfBirth!: Date;
 
   @IsNotEmpty({ message: 'Gender is required.' })
   @IsEnum(Gender, { message: 'Please select a valid gender option.' })
-  gender: Gender;
+  gender!: Gender;
 
   @IsNotEmpty({ message: 'Previous school is required.' })
   @IsString({ message: 'Previous school name must be a string.' })
@@ -30,9 +30,9 @@ export class CreateStudentDto {
     message: 'Previous school name must contain alphanumeric characters and only allowed special characters (spaces, hyphens, periods). It cannot consist of only special characters.',
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  previousSchool: string;
+  previousSchool!: string;
 
   @IsNotEmpty({ message: 'Applying grade is required.' })
   @IsEnum(Grade, { message: 'Applying grade must be a valid grade option (GRADE_1, GRADE_2, GRADE_3, or GRADE_4).' })
-  applyingGrade: Grade;
+  applyingGrade!: Grade;
 }
